@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="chat-container">
+    <div id="room-selection">
+        <label for="rooms">Select Room:</label>
+        <select id="rooms">
+            <option value="room1">Room 1</option>
+            <option value="room2">Room 2</option>
+        </select>
+        <button id="join-room">Join Room</button>
+        <button id="leave-room">Leave Room</button>
+    </div>
+    <div id="chat-box">
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Type your message">
+        <button id="send-message">Send</button>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+<script>
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+    document.getElementById('send-message').onclick = function() {
+        var message = document.getElementById('message-input').value;
+        var room = document.getElementById('rooms').value;
+        socket.emit('send_message', {
+            message: message,
+            username: '{{ username }}',
+            room: room
+        });
+        document.getElementById('message-input').value = '';
+    };
+
+    socket.on('receive_message', function(data) {
+        var messageElement = document.createElement('div');
+        messageElement.innerHTML = `<b>${data.username}:</b> ${data.message}`;
+        document.getElementById('messages').appendChild(messageElement);
+    });
+
+    document.getElementById('join-room').onclick = function() {
+        var room = document.getElementById('rooms').value;
+        socket.emit('join_room', {
+            username: '{{ username }}',
+            room: room
+        });
+    };
+
+    document.getElementById('leave-room').onclick = function() {
+        var room = document.getElementById('rooms').value;
+        socket.emit('leave_room', {
+            username: '{{ username }}',
+            room: room
+        });
+    };
+
+    socket.on('join_room_announcement', function(data) {
+        var messageElement = document.createElement('div');
+        messageElement.innerHTML = `<i>${data.username} has joined the room.</i>`;
+        document.getElementById('messages').appendChild(messageElement);
+    });
+
+    socket.on('leave_room_announcement', function(data) {
+        var messageElement = document.createElement('div');
+        messageElement.innerHTML = `<i>${data.username} has left the room.</i>`;
+        document.getElementById('messages').appendChild(messageElement);
+    });
+</script>
+{% endblock %}
